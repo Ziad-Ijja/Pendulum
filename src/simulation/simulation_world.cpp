@@ -31,6 +31,7 @@ void SimulationWorld::addSystem(std::unique_ptr<physics::PendulumSystem> system)
     if (!snapshot.masses.empty()) {
         trails_.back().push(snapshot.masses.back());
     }
+    recordEnergySample(true);
 }
 
 void SimulationWorld::update(double dt)
@@ -48,6 +49,7 @@ void SimulationWorld::update(double dt)
 
     time_ += dt;
     recordTrailSamples();
+    recordEnergySample(false);
 }
 
 void SimulationWorld::pause()
@@ -67,6 +69,8 @@ void SimulationWorld::resetTime()
         trail.clear();
     }
     recordTrailSamples();
+    energyHistory_.clear();
+    recordEnergySample(true);
 }
 
 void SimulationWorld::setPaused(bool paused)
@@ -102,6 +106,7 @@ bool SimulationWorld::dragMassWithoutVelocity(const DragHandle& handle, core::Ve
         if (!snapshot.masses.empty()) {
             trails_[handle.systemIndex].push(snapshot.masses.back());
         }
+        recordEnergySample(true);
     }
     return moved;
 }
@@ -124,6 +129,8 @@ bool SimulationWorld::addLinkToPrimarySystem(physics::PendulumLink link)
     const bool added = systems_.front()->addLinkAfterLast(link);
     if (added) {
         resetTrailForSystem(0);
+        energyHistory_.clear();
+        recordEnergySample(true);
     }
     return added;
 }
@@ -137,6 +144,8 @@ bool SimulationWorld::removeLinkFromPrimarySystem()
     const bool removed = systems_.front()->removeLastLink();
     if (removed) {
         resetTrailForSystem(0);
+        energyHistory_.clear();
+        recordEnergySample(true);
     }
     return removed;
 }
@@ -161,6 +170,11 @@ const std::vector<TrajectoryBuffer>& SimulationWorld::trails() const noexcept
     return trails_;
 }
 
+const EnergyHistory& SimulationWorld::energyHistory() const noexcept
+{
+    return energyHistory_;
+}
+
 std::vector<physics::PendulumSnapshot> SimulationWorld::snapshots() const
 {
     std::vector<physics::PendulumSnapshot> result;
@@ -181,6 +195,26 @@ void SimulationWorld::recordTrailSamples()
             trails_[i].push(snapshot.masses.back());
         }
     }
+}
+
+void SimulationWorld::recordEnergySample(bool resetBaseline)
+{
+    physics::EnergySample aggregate;
+    aggregate.time = time_;
+
+    for (const auto& system : systems_) {
+        const auto sample = system->energy(time_);
+        aggregate.kinetic += sample.kinetic;
+        aggregate.potential += sample.potential;
+    }
+
+    aggregate.total = aggregate.kinetic + aggregate.potential;
+    if (resetBaseline || !hasEnergyBaseline_) {
+        energyBaseline_ = aggregate.total;
+        hasEnergyBaseline_ = true;
+    }
+    aggregate.drift = aggregate.total - energyBaseline_;
+    energyHistory_.push(aggregate);
 }
 
 void SimulationWorld::resetTrailForSystem(std::size_t systemIndex)

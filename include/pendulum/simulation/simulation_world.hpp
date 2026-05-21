@@ -4,6 +4,7 @@
 #include "pendulum/physics/pendulum_snapshot.hpp"
 #include "pendulum/physics/pendulum_system.hpp"
 #include "pendulum/simulation/drag_handle.hpp"
+#include "pendulum/simulation/energy_history.hpp"
 #include "pendulum/simulation/trajectory_buffer.hpp"
 
 #include <memory>
@@ -39,17 +40,22 @@ public:
     [[nodiscard]] double time() const noexcept;
     [[nodiscard]] const std::string& name() const noexcept;
     [[nodiscard]] const std::vector<TrajectoryBuffer>& trails() const noexcept;
+    [[nodiscard]] const EnergyHistory& energyHistory() const noexcept;
     [[nodiscard]] std::vector<physics::PendulumSnapshot> snapshots() const;
 
 private:
     void recordTrailSamples();
+    void recordEnergySample(bool resetBaseline);
     void resetTrailForSystem(std::size_t systemIndex);
 
     std::string name_;
     std::vector<std::unique_ptr<physics::PendulumSystem>> systems_;
     std::vector<TrajectoryBuffer> trails_;
+    EnergyHistory energyHistory_;
     std::unique_ptr<physics::Integrator> integrator_;
+    double energyBaseline_ = 0.0;
     double time_ = 0.0;
+    bool hasEnergyBaseline_ = false;
     bool paused_ = false;
 };
 

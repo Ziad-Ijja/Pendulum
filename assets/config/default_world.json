@@ -8,8 +8,8 @@
       "length": 2.0,
       "mass": 1.0,
       "angle_degrees": 60.0,
-      "angular_velocity": 0.0
+      "angular_velocity": 0.0,
+      "damping": 0.0
     }
   ]
 }
-

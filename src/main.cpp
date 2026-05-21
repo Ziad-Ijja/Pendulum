@@ -32,7 +32,7 @@ int main()
     constexpr double pi = 3.14159265358979323846;
     world.addSystem(std::make_unique<physics::ChainPendulumSystem>(
         std::vector<physics::PendulumLink>{{1.8, 1.0}},
-        physics::PhysicsParameters{9.81, 0.002},
+        physics::PhysicsParameters{9.81, 0.0},
         std::vector<double>{pi / 3.0},
         std::vector<double>{0.0}
     ));

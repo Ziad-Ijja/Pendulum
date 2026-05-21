@@ -14,6 +14,7 @@ public:
     void setState(const StateVector& state) override;
     [[nodiscard]] StateVector derivative(const StateVector& state, double time) const override;
     [[nodiscard]] PendulumSnapshot snapshot(double time) const override;
+    [[nodiscard]] EnergySample energy(double time) const override;
     [[nodiscard]] std::size_t linkCount() const override;
     bool setMassPositionWithoutVelocity(std::size_t massIndex, core::Vec2 worldPoint) override;
 

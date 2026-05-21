@@ -56,6 +56,7 @@ target_include_directories(pendulum_physics PUBLIC include)
 target_link_libraries(pendulum_physics PUBLIC Pendulum::Core)
 
 add_library(pendulum_simulation
+    src/simulation/energy_history.cpp
     src/simulation/simulation_manager.cpp
     src/simulation/simulation_world.cpp
     src/simulation/trajectory_buffer.cpp

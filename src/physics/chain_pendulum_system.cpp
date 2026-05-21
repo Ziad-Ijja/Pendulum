@@ -223,6 +223,35 @@ PendulumSnapshot ChainPendulumSystem::snapshot(double time) const
     return result;
 }
 
+EnergySample ChainPendulumSystem::energy(double time) const
+{
+    const std::size_t n = links_.size();
+    const auto angles = anglesFromState(state_);
+    const auto angularVelocities = angularVelocitiesFromState(state_);
+
+    double kinetic = 0.0;
+    double potential = 0.0;
+
+    core::Vec2 position{0.0, 0.0};
+    core::Vec2 velocity{0.0, 0.0};
+    for (std::size_t i = 0; i < n; ++i) {
+        position = {
+            position.x + links_[i].length * std::sin(angles[i]),
+            position.y + links_[i].length * std::cos(angles[i])
+        };
+        velocity = {
+            velocity.x + links_[i].length * std::cos(angles[i]) * angularVelocities[i],
+            velocity.y - links_[i].length * std::sin(angles[i]) * angularVelocities[i]
+        };
+
+        const double speedSquared = velocity.x * velocity.x + velocity.y * velocity.y;
+        kinetic += 0.5 * links_[i].mass * speedSquared;
+        potential += -links_[i].mass * parameters_.gravity * position.y;
+    }
+
+    return {kinetic, potential, kinetic + potential, 0.0, time};
+}
+
 std::size_t ChainPendulumSystem::linkCount() const
 {
     return links_.size();

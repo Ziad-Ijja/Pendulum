@@ -52,6 +52,10 @@ int main()
     };
     const StateVector chainDerivative = chain.derivative(chain.state(), 0.0);
     assert(std::abs(chainDerivative[1] + 9.81 * std::sin(0.1)) < 1.0e-12);
+    const EnergySample chainEnergy = chain.energy(0.0);
+    assert(std::isfinite(chainEnergy.kinetic));
+    assert(std::isfinite(chainEnergy.potential));
+    assert(std::isfinite(chainEnergy.total));
     assert(chain.linkCount() == 1);
     assert(chain.addLinkAfterLast({0.9, 0.8}));
     assert(chain.linkCount() == 2);

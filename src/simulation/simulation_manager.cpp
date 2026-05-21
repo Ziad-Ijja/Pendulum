@@ -87,4 +87,13 @@ const std::vector<std::unique_ptr<SimulationWorld>>& SimulationManager::worlds()
     return worlds_;
 }
 
+const EnergyHistory* SimulationManager::primaryEnergyHistory() const noexcept
+{
+    if (worlds_.empty()) {
+        return nullptr;
+    }
+
+    return &worlds_.front()->energyHistory();
+}
+
 } // namespace pendulum::simulation

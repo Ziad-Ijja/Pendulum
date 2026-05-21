@@ -23,6 +23,7 @@ public:
 
     [[nodiscard]] std::vector<std::unique_ptr<SimulationWorld>>& worlds() noexcept;
     [[nodiscard]] const std::vector<std::unique_ptr<SimulationWorld>>& worlds() const noexcept;
+    [[nodiscard]] const EnergyHistory* primaryEnergyHistory() const noexcept;
 
 private:
     std::vector<std::unique_ptr<SimulationWorld>> worlds_;

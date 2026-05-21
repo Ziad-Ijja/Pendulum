@@ -70,6 +70,14 @@ PendulumSnapshot SinglePendulumSystem::snapshot(double time) const
     return result;
 }
 
+EnergySample SinglePendulumSystem::energy(double time) const
+{
+    const double speed = link_.length * angularVelocity_;
+    const double kinetic = 0.5 * link_.mass * speed * speed;
+    const double potential = -link_.mass * parameters_.gravity * link_.length * std::cos(angleRadians_);
+    return {kinetic, potential, kinetic + potential, 0.0, time};
+}
+
 std::size_t SinglePendulumSystem::linkCount() const
 {
     return 1;
