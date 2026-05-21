@@ -1,0 +1,15 @@
+{
+  "gravity": 9.81,
+  "fixed_timestep": 0.004166666666666667,
+  "integrator": "rk4",
+  "systems": [
+    {
+      "type": "single_pendulum",
+      "length": 2.0,
+      "mass": 1.0,
+      "angle_degrees": 60.0,
+      "angular_velocity": 0.0
+    }
+  ]
+}
+
