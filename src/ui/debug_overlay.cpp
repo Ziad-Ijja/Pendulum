@@ -92,6 +92,17 @@ void drawText(
     target.draw(text);
 }
 
+void drawTextButton(
+    sf::RenderTarget& target,
+    core::ScreenRect bounds,
+    std::string_view label,
+    sf::Color border
+)
+{
+    drawButtonBox(target, bounds, border);
+    drawText(target, label, {bounds.left + 8.0F, bounds.top + 3.0F}, 13, sf::Color{45, 50, 58});
+}
+
 void drawDigit(sf::RenderTarget& target, int digit, core::ScreenRect bounds, sf::Color color)
 {
     constexpr bool segments[10][7] = {
@@ -137,21 +148,6 @@ void drawDigit(sf::RenderTarget& target, int digit, core::ScreenRect bounds, sf:
     }
 }
 
-core::ScreenRect energyGraphBounds(sf::Vector2u targetSize)
-{
-    constexpr float margin = 18.0F;
-    const float availableWidth = std::max(320.0F, static_cast<float>(targetSize.x) - margin * 2.0F);
-    const float graphWidth = std::min(760.0F, availableWidth);
-    const float graphHeight = std::min(240.0F, std::max(180.0F, static_cast<float>(targetSize.y) * 0.26F));
-
-    return {
-        margin,
-        static_cast<float>(targetSize.y) - graphHeight - margin,
-        graphWidth,
-        graphHeight
-    };
-}
-
 void drawGraphBackground(sf::RenderTarget& target, core::ScreenRect bounds, sf::Color border)
 {
     sf::RectangleShape background{{bounds.width, bounds.height}};
@@ -183,6 +179,33 @@ void drawLegendItem(
     drawText(target, label, {position.x + 30.0F, position.y - 1.0F}, 14, sf::Color{45, 50, 58});
 }
 
+void drawGraphToggleButton(
+    sf::RenderTarget& target,
+    core::ScreenRect bounds,
+    bool expanded,
+    sf::Color border
+)
+{
+    drawButtonBox(target, bounds, border);
+
+    const sf::Color controlColor{45, 50, 58};
+    drawLine(
+        target,
+        {bounds.left + 6.0F, bounds.top + bounds.height * 0.5F},
+        {bounds.width - 12.0F, 2.0F},
+        controlColor
+    );
+
+    if (!expanded) {
+        drawLine(
+            target,
+            {bounds.left + bounds.width * 0.5F - 1.0F, bounds.top + 6.0F},
+            {2.0F, bounds.height - 12.0F},
+            controlColor
+        );
+    }
+}
+
 template <typename ValueSelector>
 void drawEnergyTrace(
     sf::RenderTarget& target,
@@ -211,14 +234,20 @@ void drawEnergyTrace(
     target.draw(trace);
 }
 
+void drawMinimizedEnergyGraph(sf::RenderTarget& target, sf::Color border)
+{
+    const auto targetSize = target.getSize();
+    const auto bounds = minimizedEnergyGraphBounds(static_cast<float>(targetSize.y));
+
+    drawGraphBackground(target, bounds, border);
+    drawText(target, "Energy", {bounds.left + 10.0F, bounds.top + 10.0F}, 16, sf::Color{45, 50, 58});
+    drawGraphToggleButton(target, graphToggleButtonBounds(bounds), false, border);
+}
+
 void drawEnergyGraph(sf::RenderTarget& target, const simulation::SimulationManager& simulations, sf::Color border)
 {
-    const auto* history = simulations.primaryEnergyHistory();
-    if (history == nullptr || history->samples().size() < 2) {
-        return;
-    }
-
-    const auto bounds = energyGraphBounds(target.getSize());
+    const auto targetSize = target.getSize();
+    const auto bounds = energyGraphBounds(static_cast<float>(targetSize.x), static_cast<float>(targetSize.y));
     const float headerHeight = 32.0F;
     const auto plotBounds = core::ScreenRect{
         bounds.left + 10.0F,
@@ -233,10 +262,18 @@ void drawEnergyGraph(sf::RenderTarget& target, const simulation::SimulationManag
         plotBounds.width,
         plotBounds.height * 0.22F
     };
-    const auto& samples = history->samples();
 
     drawGraphBackground(target, bounds, border);
     drawText(target, "Energy", {bounds.left + 10.0F, bounds.top + 7.0F}, 16, sf::Color{45, 50, 58});
+    drawGraphToggleButton(target, graphToggleButtonBounds(bounds), true, border);
+
+    const auto* history = simulations.primaryEnergyHistory();
+    if (history == nullptr || history->samples().size() < 2) {
+        return;
+    }
+
+    const auto& samples = history->samples();
+
     drawLegendItem(target, {bounds.left + 92.0F, bounds.top + 7.0F}, sf::Color{45, 96, 160}, "total");
     drawLegendItem(target, {bounds.left + 178.0F, bounds.top + 7.0F}, sf::Color{206, 70, 55}, "kinetic");
     drawLegendItem(target, {bounds.left + 282.0F, bounds.top + 7.0F}, sf::Color{35, 137, 126}, "potential");
@@ -337,6 +374,10 @@ void DebugOverlay::render(
     drawButtonBox(target, decrementLinkBounds, border);
     drawButtonBox(target, linkCounterBounds, border);
     drawButtonBox(target, incrementLinkBounds, border);
+    drawTextButton(target, resetButtonBounds, "Reset", border);
+    drawTextButton(target, clearTrailsButtonBounds, "Clear", border);
+    drawTextButton(target, randomizeButtonBounds, "Random", border);
+    drawTextButton(target, resetVelocitiesButtonBounds, "Zero v", border);
 
     const sf::Color controlColor{45, 50, 58};
     drawLine(
@@ -359,7 +400,11 @@ void DebugOverlay::render(
     );
 
     drawDigit(target, static_cast<int>(simulations.primaryLinkCount()), linkCounterBounds, controlColor);
-    drawEnergyGraph(target, simulations, border);
+    if (visualization.showEnergyGraph) {
+        drawEnergyGraph(target, simulations, border);
+    } else {
+        drawMinimizedEnergyGraph(target, border);
+    }
 }
 
 } // namespace pendulum::ui

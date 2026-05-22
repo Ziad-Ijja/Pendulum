@@ -24,7 +24,11 @@ public:
     void update(double dt);
     void pause();
     void resume();
+    void reset();
     void resetTime();
+    void clearTrails();
+    void randomizeAngles();
+    void resetVelocities();
     void setPaused(bool paused);
     [[nodiscard]] std::optional<DragHandle> findDraggableMass(
         std::size_t worldIndex,
@@ -47,9 +51,12 @@ private:
     void recordTrailSamples();
     void recordEnergySample(bool resetBaseline);
     void resetTrailForSystem(std::size_t systemIndex);
+    void resetEnergyHistory();
+    void saveCurrentStateAsInitial(std::size_t systemIndex);
 
     std::string name_;
     std::vector<std::unique_ptr<physics::PendulumSystem>> systems_;
+    std::vector<physics::StateVector> initialStates_;
     std::vector<TrajectoryBuffer> trails_;
     EnergyHistory energyHistory_;
     std::unique_ptr<physics::Integrator> integrator_;

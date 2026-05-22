@@ -18,6 +18,10 @@ public:
     [[nodiscard]] std::optional<DragHandle> findDraggableMass(core::Vec2 worldPoint, double maxDistance) const;
     bool dragMassWithoutVelocity(const DragHandle& handle, core::Vec2 worldPoint);
     [[nodiscard]] std::size_t primaryLinkCount() const;
+    bool resetPrimaryWorld();
+    bool clearPrimaryTrails();
+    bool randomizePrimaryAngles();
+    bool resetPrimaryVelocities();
     bool addLinkToPrimarySystem(physics::PendulumLink link);
     bool removeLinkFromPrimarySystem();
 

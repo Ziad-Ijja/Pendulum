@@ -1,5 +1,7 @@
 #include "pendulum/simulation/simulation_world.hpp"
 
+#include <cmath>
+#include <random>
 #include <stdexcept>
 #include <utility>
 
@@ -26,6 +28,7 @@ void SimulationWorld::addSystem(std::unique_ptr<physics::PendulumSystem> system)
     }
 
     systems_.push_back(std::move(system));
+    initialStates_.push_back(systems_.back()->state());
     trails_.emplace_back();
     const auto snapshot = systems_.back()->snapshot(time_);
     if (!snapshot.masses.empty()) {
@@ -62,15 +65,71 @@ void SimulationWorld::resume()
     paused_ = false;
 }
 
+void SimulationWorld::reset()
+{
+    for (std::size_t i = 0; i < systems_.size(); ++i) {
+        if (i < initialStates_.size()) {
+            systems_[i]->setState(initialStates_[i]);
+        }
+    }
+
+    resetTime();
+}
+
 void SimulationWorld::resetTime()
 {
     time_ = 0.0;
-    for (auto& trail : trails_) {
-        trail.clear();
+    clearTrails();
+    resetEnergyHistory();
+}
+
+void SimulationWorld::clearTrails()
+{
+    for (std::size_t i = 0; i < trails_.size(); ++i) {
+        resetTrailForSystem(i);
     }
-    recordTrailSamples();
-    energyHistory_.clear();
-    recordEnergySample(true);
+}
+
+void SimulationWorld::randomizeAngles()
+{
+    static std::mt19937 engine{std::random_device{}()};
+    constexpr double pi = 3.14159265358979323846;
+    std::uniform_real_distribution<double> angleDistribution{-pi, pi};
+
+    for (std::size_t i = 0; i < systems_.size(); ++i) {
+        auto state = systems_[i]->state();
+        const std::size_t linkCount = systems_[i]->linkCount();
+        if (state.size() < linkCount) {
+            continue;
+        }
+
+        for (std::size_t angleIndex = 0; angleIndex < linkCount; ++angleIndex) {
+            state[angleIndex] = angleDistribution(engine);
+        }
+        systems_[i]->setState(state);
+        saveCurrentStateAsInitial(i);
+    }
+
+    resetTime();
+}
+
+void SimulationWorld::resetVelocities()
+{
+    for (std::size_t i = 0; i < systems_.size(); ++i) {
+        auto state = systems_[i]->state();
+        const std::size_t linkCount = systems_[i]->linkCount();
+        if (state.size() < linkCount * 2) {
+            continue;
+        }
+
+        for (std::size_t velocityIndex = linkCount; velocityIndex < linkCount * 2; ++velocityIndex) {
+            state[velocityIndex] = 0.0;
+        }
+        systems_[i]->setState(state);
+        saveCurrentStateAsInitial(i);
+    }
+
+    resetTime();
 }
 
 void SimulationWorld::setPaused(bool paused)
@@ -128,9 +187,9 @@ bool SimulationWorld::addLinkToPrimarySystem(physics::PendulumLink link)
 
     const bool added = systems_.front()->addLinkAfterLast(link);
     if (added) {
+        saveCurrentStateAsInitial(0);
         resetTrailForSystem(0);
-        energyHistory_.clear();
-        recordEnergySample(true);
+        resetEnergyHistory();
     }
     return added;
 }
@@ -143,9 +202,9 @@ bool SimulationWorld::removeLinkFromPrimarySystem()
 
     const bool removed = systems_.front()->removeLastLink();
     if (removed) {
+        saveCurrentStateAsInitial(0);
         resetTrailForSystem(0);
-        energyHistory_.clear();
-        recordEnergySample(true);
+        resetEnergyHistory();
     }
     return removed;
 }
@@ -228,6 +287,24 @@ void SimulationWorld::resetTrailForSystem(std::size_t systemIndex)
     if (!snapshot.masses.empty()) {
         trails_[systemIndex].push(snapshot.masses.back());
     }
+}
+
+void SimulationWorld::resetEnergyHistory()
+{
+    energyHistory_.clear();
+    recordEnergySample(true);
+}
+
+void SimulationWorld::saveCurrentStateAsInitial(std::size_t systemIndex)
+{
+    if (systemIndex >= systems_.size()) {
+        return;
+    }
+    if (systemIndex >= initialStates_.size()) {
+        initialStates_.resize(systemIndex + 1);
+    }
+
+    initialStates_[systemIndex] = systems_[systemIndex]->state();
 }
 
 } // namespace pendulum::simulation

@@ -39,6 +39,14 @@ void InputController::handleWindowEvents(
                     world->setPaused(!world->isPaused());
                 }
             }
+            if (keyPressed->code == sf::Keyboard::Key::R) {
+                simulations.resetPrimaryWorld();
+                activeDrag_.reset();
+            }
+            if (keyPressed->code == sf::Keyboard::Key::C) {
+                simulations.clearPrimaryTrails();
+                activeDrag_.reset();
+            }
         }
 
         if (const auto* mousePressed = event->getIf<sf::Event::MouseButtonPressed>()) {
@@ -50,6 +58,22 @@ void InputController::handleWindowEvents(
                 visualization.showTrails = !visualization.showTrails;
                 continue;
             }
+
+            const auto windowSize = window.getSize();
+            const auto graphPanelBounds = ui::energyGraphPanelBounds(
+                static_cast<float>(windowSize.x),
+                static_cast<float>(windowSize.y),
+                visualization.showEnergyGraph
+            );
+            const bool graphToggleClicked = contains(ui::graphToggleButtonBounds(graphPanelBounds), mousePressed->position);
+            const bool minimizedGraphClicked = !visualization.showEnergyGraph
+                && contains(graphPanelBounds, mousePressed->position);
+            if (graphToggleClicked || minimizedGraphClicked) {
+                visualization.showEnergyGraph = !visualization.showEnergyGraph;
+                activeDrag_.reset();
+                continue;
+            }
+
             if (contains(ui::incrementLinkBounds, mousePressed->position)) {
                 constexpr std::size_t maxInteractiveLinks = 8;
                 if (simulations.primaryLinkCount() < maxInteractiveLinks) {
@@ -64,6 +88,26 @@ void InputController::handleWindowEvents(
                 continue;
             }
             if (contains(ui::linkCounterBounds, mousePressed->position)) {
+                continue;
+            }
+            if (contains(ui::resetButtonBounds, mousePressed->position)) {
+                simulations.resetPrimaryWorld();
+                activeDrag_.reset();
+                continue;
+            }
+            if (contains(ui::clearTrailsButtonBounds, mousePressed->position)) {
+                simulations.clearPrimaryTrails();
+                activeDrag_.reset();
+                continue;
+            }
+            if (contains(ui::randomizeButtonBounds, mousePressed->position)) {
+                simulations.randomizePrimaryAngles();
+                activeDrag_.reset();
+                continue;
+            }
+            if (contains(ui::resetVelocitiesButtonBounds, mousePressed->position)) {
+                simulations.resetPrimaryVelocities();
+                activeDrag_.reset();
                 continue;
             }
 

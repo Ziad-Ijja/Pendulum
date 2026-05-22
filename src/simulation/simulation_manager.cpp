@@ -59,6 +59,46 @@ std::size_t SimulationManager::primaryLinkCount() const
     return worlds_.front()->primaryLinkCount();
 }
 
+bool SimulationManager::resetPrimaryWorld()
+{
+    if (worlds_.empty()) {
+        return false;
+    }
+
+    worlds_.front()->reset();
+    return true;
+}
+
+bool SimulationManager::clearPrimaryTrails()
+{
+    if (worlds_.empty()) {
+        return false;
+    }
+
+    worlds_.front()->clearTrails();
+    return true;
+}
+
+bool SimulationManager::randomizePrimaryAngles()
+{
+    if (worlds_.empty()) {
+        return false;
+    }
+
+    worlds_.front()->randomizeAngles();
+    return true;
+}
+
+bool SimulationManager::resetPrimaryVelocities()
+{
+    if (worlds_.empty()) {
+        return false;
+    }
+
+    worlds_.front()->resetVelocities();
+    return true;
+}
+
 bool SimulationManager::addLinkToPrimarySystem(physics::PendulumLink link)
 {
     if (worlds_.empty()) {
